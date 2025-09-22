@@ -211,55 +211,266 @@ npm start
 
 ## Deployment
 
-### Backend Deployment (Heroku/Railway/etc.)
-1. Set environment variables in hosting platform
-2. Ensure MongoDB Atlas connection string is used
-3. Deploy server code
+### Frontend Deployment (Vercel - Recommended)
 
-### Frontend Deployment (Netlify/Vercel/etc.)
-1. Build the React app: `cd client && npm run build`
-2. Deploy the `build` folder
-3. Set up API proxy or update API endpoints
+#### Environment Variables for Vercel
 
-## Troubleshooting
+When deploying the frontend to Vercel, you need to set these environment variables in your Vercel dashboard:
 
-### Common Issues
+**Required Environment Variables:**
+```env
+# API Configuration
+REACT_APP_API_URL=https://your-backend-url.herokuapp.com/api
+REACT_APP_API_BASE_URL=https://your-backend-url.herokuapp.com
 
-1. **MongoDB Connection Error**
-   - Check MongoDB is running locally
-   - Verify connection string in `.env`
-   - Ensure network access for MongoDB Atlas
+# App Configuration
+REACT_APP_APP_NAME=AI Bill Summarizer
+REACT_APP_VERSION=1.0.0
 
-2. **AI API Errors**
-   - Verify Gemini API key is valid
-   - Check API quotas and limits
-   - Ensure network connectivity
+# Environment
+NODE_ENV=production
 
-3. **File Upload Issues**
-   - Check file size limits (5MB max)
-   - Verify file formats are supported
-   - Ensure uploads directory exists and has write permissions
+# Optional: Analytics & Tracking
+REACT_APP_GA_TRACKING_ID=your_google_analytics_id
+REACT_APP_SENTRY_DSN=your_sentry_dsn_for_error_tracking
+```
 
-4. **OCR Not Working**
-   - Check image quality and resolution
-   - Ensure Tesseract.js dependencies are installed
-   - Try with different image formats
+**Optional Environment Variables:**
+```env
+# Feature Flags
+REACT_APP_ENABLE_ANALYTICS=true
+REACT_APP_ENABLE_PWA=true
+REACT_APP_DEBUG_MODE=false
 
-### Debug Mode
-Set `NODE_ENV=development` to see detailed error messages.
+# AI Configuration (if client-side AI features)
+REACT_APP_OPENAI_API_KEY=your_openai_key_if_needed
+REACT_APP_MAX_FILE_SIZE=5242880
 
-## Contributing
+# UI/UX Configuration
+REACT_APP_DEFAULT_CURRENCY=USD
+REACT_APP_DATE_FORMAT=MM/DD/YYYY
+REACT_APP_THEME=default
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+# Third-party Services
+REACT_APP_STRIPE_PUBLIC_KEY=your_stripe_public_key_if_payments
+REACT_APP_FIREBASE_CONFIG=your_firebase_config_if_used
+```
 
-## License
+#### Vercel Deployment Steps
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+1. **Install Vercel CLI**
+```bash
+npm i -g vercel
+```
 
-## Support
+2. **Login to Vercel**
+```bash
+vercel login
+```
 
-For support, please open an issue on the GitHub repository or contact the development team.
+3. **Deploy from Client Directory**
+```bash
+cd client
+vercel --prod
+```
+
+4. **Set Environment Variables in Vercel Dashboard**
+   - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+   - Add all the required environment variables listed above
+   - Redeploy after adding variables
+
+5. **Alternative: Using vercel.json Configuration**
+Create `client/vercel.json`:
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "@api_url",
+    "REACT_APP_APP_NAME": "@app_name"
+  }
+}
+```
+
+### Backend Deployment (Railway/Heroku/Render)
+
+#### Environment Variables for Backend Hosting
+
+**Required Backend Environment Variables:**
+```env
+# Server Configuration
+PORT=5000
+NODE_ENV=production
+
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ai_bill_summarizer?retryWrites=true&w=majority
+
+# Authentication
+JWT_SECRET=your_super_secure_jwt_secret_for_production
+JWT_EXPIRE=7d
+
+# AI Services
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_openai_key_if_using
+
+# CORS Configuration
+CLIENT_URL=https://your-vercel-app.vercel.app
+ALLOWED_ORIGINS=https://your-vercel-app.vercel.app,https://your-custom-domain.com
+
+# File Upload Configuration
+MAX_FILE_SIZE=5242880
+UPLOAD_PATH=/tmp/uploads
+ALLOWED_FILE_TYPES=image/jpeg,image/png,image/jpg,application/pdf
+
+# Email Configuration (if using email features)
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+FROM_EMAIL=your_email@gmail.com
+
+# Security
+BCRYPT_ROUNDS=12
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Session Configuration
+SESSION_SECRET=your_session_secret_for_production
+COOKIE_SECURE=true
+COOKIE_HTTP_ONLY=true
+COOKIE_SAME_SITE=strict
+```
+
+### Complete Deployment Checklist
+
+#### Pre-deployment Setup
+
+1. **Create Production MongoDB Database**
+```bash
+# Use MongoDB Atlas for production
+# Create cluster and get connection string
+# Whitelist all IPs (0.0.0.0/0) or specific IPs
+```
+
+2. **Prepare Environment Files**
+```bash
+# Create .env.production for backend
+# Set all production environment variables
+# Never commit .env files to version control
+```
+
+3. **Update API Endpoints**
+```bash
+# In client/src/config/api.js or similar
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+```
+
+#### Frontend Deployment (Vercel)
+
+1. **Build Settings**
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+   - Install Command: `npm install`
+
+2. **Domain Configuration**
+   - Add custom domain if needed
+   - Configure DNS settings
+   - Enable HTTPS (automatic with Vercel)
+
+#### Backend Deployment (Railway Example)
+
+1. **Connect Repository**
+```bash
+# Connect GitHub repository to Railway
+# Set up automatic deployments
+```
+
+2. **Environment Variables in Railway**
+```bash
+# Add all backend environment variables
+# Use Railway's database services if preferred
+```
+
+3. **Health Check Endpoint**
+```javascript
+// Ensure you have a health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+```
+
+### Production Optimizations
+
+#### Frontend Optimizations
+```bash
+# Add to package.json build script
+"build": "GENERATE_SOURCEMAP=false react-scripts build"
+
+# Enable service worker for PWA
+"homepage": "https://your-domain.com"
+```
+
+#### Backend Optimizations
+```javascript
+// Add compression middleware
+const compression = require('compression');
+app.use(compression());
+
+// Add security headers
+const helmet = require('helmet');
+app.use(helmet());
+
+// Add rate limiting
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+```
+
+### Environment Variable Security
+
+**Security Best Practices:**
+- Never commit `.env` files to version control
+- Use different API keys for development and production
+- Rotate secrets regularly
+- Use strong, unique values for JWT_SECRET
+- Enable database authentication and use strong passwords
+- Use HTTPS in production (automatic with Vercel)
+
+**Environment Variable Validation:**
+```javascript
+// Add to your backend startup
+const requiredEnvVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'GEMINI_API_KEY'
+];
+
+requiredEnvVars.forEach((envVar) => {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
+});
+```
